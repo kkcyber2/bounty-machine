@@ -1,0 +1,20 @@
+{
+  "program": "acme",
+  "platform": "hackerone",
+  "in_scope": [
+    {"pattern": "api.acme.com", "kind": "api", "notes": "AI assistant REST/WS API"},
+    {"pattern": "chat.acme.com", "kind": "web", "notes": "Assistant web client"}
+  ],
+  "out_of_scope": [
+    {"pattern": "admin.acme.com", "reason": "internal admin console", "kind": "host"}
+  ],
+  "prohibited_techniques": ["destructive", "economic_denial", "malware", "social_bot_auditor"],
+  "permitted_techniques": [],
+  "rate_limit_rps": 2.0,
+  "max_requests": 300,
+  "max_duration_s": 1800,
+  "requires_test_account": true,
+  "safe_harbour": true,
+  "disclosure_days": 90,
+  "source_url": "file://policy-example.md"
+}
