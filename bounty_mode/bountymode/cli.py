@@ -51,7 +51,7 @@ def _load_yaml_or_json(path: str) -> Dict[str, Any]:
     if p.suffix.lower() == ".json":
         return json.loads(text)
     try:
-        import yaml # type: ignore
+        import yaml  # type: ignore
     except ImportError as exc:  # pragma: no cover
         raise SystemExit(
             "PyYAML is required for YAML case files. Install it or use JSON."
@@ -218,7 +218,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     for s in result.skipped:
         print(f"  - skipped {s['technique']}: {s['reason']}")
     for f in result.findings:
-        print(f"  + {f.severity.value.upper():<13} {f.title}  (cvss {f.cvss_score<:.1f})")
+        print(f"  + {f.severity.value.upper():<13} {f.title}  (cvss {f.cvss_score:.1f})")
     print(f"\nArtifacts under: {out_dir}")
     return EXIT_OK
 
