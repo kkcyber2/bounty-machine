@@ -1,0 +1,40 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+
+# --- Test / coverage ---
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# --- Bounty Mode run artifacts (may contain redacted evidence) ---
+bounty-run/
+reports/
+registry.json
+*-scope.json
+evidence/
+
+# --- Secrets: never commit these ---
+.env
+.env.*
+*.pem
+*.key
+secrets.json
+credentials.json
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
