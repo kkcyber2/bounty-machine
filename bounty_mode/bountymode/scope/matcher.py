@@ -97,8 +97,15 @@ def target_matches_pattern(target: str, pattern: str) -> bool:
         # Full URL entry: require scheme+host+path prefix agreement.
         if url:
             return url_matches(pat, url)
-        pat_host = urlparse(pat).hostname or ""
-        return host_matches(pat_host, host)
+        raw = (target or "").strip()
+        if "/" in raw:
+            # A scheme-less target may still carry a path worth comparing.
+            return url_matches(pat, "https://" + raw.lower().rstrip("/"))
+        # A bare host cannot satisfy a path-scoped URL entry.
+        parsed = urlparse(pat)
+        if (parsed.path or "").strip("/"):
+            return False
+        return host_matches(parsed.hostname or "", host)
 
     if "/" in pat:
         # host/path entry
