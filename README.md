@@ -1,106 +1,107 @@
-# Agathon Engine (AI-red-team)
+# Bounty Machine
 
-An AI red-teaming framework and FastAPI orchestrator for adversarial testing and security assessment of large language models. Powers ForgeGuard scan execution (kinetic strikes, Garak probes, Groq Brain).
+An **authorized AI red-teaming engine** with a **bounty-grade workflow layer**
+on top. The engine (`agathon/`, `attacks/`) does the offensive testing; the
+workflow layer (`bounty_mode/`) turns its output into scope-compliant,
+submittable bug-bounty reports.
 
-**Deploy targets:** [GitHub](https://github.com/valosd453-bit/AI-red-team) + [Railway](https://railway.app) only (Railpack). No Hugging Face Spaces.
+> ⚠️ **Authorized security testing only.** Test systems you own or have
+> explicit written permission to test, typically through a published
+> bug-bounty program. Scope enforcement is built in, but the operator carries
+> the legal responsibility for every test they authorize. See
+> [`bounty_mode/README.md`](bounty_mode/README.md#legal-and-authorization-notice).
 
-| Item | Value |
-|------|--------|
-| Entry | `uvicorn main:app` → [`agathon/orchestrator.py`](agathon/orchestrator.py) |
-| Port | `$PORT` (injected by Railway) |
-| Build | Railpack + mise (`python-3.11` in `runtime.txt`; `python.github_attestations = false` in `mise.toml`) |
+---
 
-### Required environment variables
+## Repository layout
 
-| Variable | Purpose |
-|----------|---------|
-| `SUPABASE_URL` | Postgres / Realtime |
-| `SUPABASE_SERVICE_ROLE_KEY` | Engine writes `scan_logs` |
-| `INTERNAL_SCAN_TOKEN` or `AGATHON_INTERNAL_SECRET` | Bearer auth from ForgeGuard |
-| `GROQ_API_KEY` | Brain loop only |
-| `OPENROUTER_API_KEY` | Scout / Assassin / Judge |
+```
+.
+├── agathon/             # the red-teaming engine (Brain, orchestrator, EVOLVE, sandbox)
+├── attacks/             # 19 attack modules + 100-vector library + dynamic plugins
+├── api/                 # FastAPI service surface (POST /scan/start, GET /scan/{id})
+├── tests/               # engine tests
+└── bounty_mode/         # ← the bounty workflow layer (this repo's new component)
+    ├── bountymode/      # the pip-installable package
+    ├── tests/           # 76 offline tests
+    └── examples/        # policy, scope, case and finding examples
+```
 
-Optional: `DEEPSEEK_API_KEY`, `AGATHON_DOCKER_IMAGE`, `AGATHON_LOG_LEVEL`.
+The two halves are independent: the engine can run alone, and the workflow
+layer can drive **any** engine that speaks the `AttackResult` contract.
 
-Optional webhook callback (engine → ForgeGuard):
+---
 
-- `AGATHON_WEBHOOK_CALLBACK_URL` = `https://www.forgeguard-ai.com/api/v1/webhooks/agathon`
-- `AGATHON_WEBHOOK_SECRET` = same as ForgeGuard `AGATHON_WEBHOOK_SECRET` or `INTERNAL_SCAN_TOKEN`
-
-### Health endpoints
-
-- `GET /health` — survival liveness (no auth), returns `{"status":"healthy","engine":"Agathon-Sovereign"}`
-- `GET /healthz` — same survival payload (platform probes)
-
-Scan and identity routes still require `Authorization: Bearer <INTERNAL_SCAN_TOKEN>`.
-
-**Canonical repository:** [github.com/valosd453-bit/AI-red-team](https://github.com/valosd453-bit/AI-red-team)
-
-ForgeGuard Vercel must set `PYTHON_ENGINE_URL` / `AGATHON_ORCHESTRATOR_URL` to your Railway engine URL. The Next.js UI is **not** included in this image.
-
-### Local smoke test
+## Quickstart — the workflow layer
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-playwright install chromium
-uvicorn main:app --host 0.0.0.0 --port 7860
-curl http://localhost:7860/healthz
+cd bounty_mode
+pip install -e ".[dev]"
+
+python -m bountymode techniques          # the 19-technique catalogue
+python examples/demo_offline.py          # full pipeline, no network, no keys
+python -m pytest -q                      # 76 tests, no credentials needed
 ```
 
-## Project Structure
-
-```
-AI-red-team/
-├── agathon/              # FastAPI orchestrator + kinetic strike
-│   ├── orchestrator.py   # Production app (Railway)
-│   ├── kinetic_strike.py
-│   └── reporter.py
-├── attacks/              # Attack implementations + Garak
-├── clients/              # LLM router (OpenRouter / Groq)
-├── main.py               # Uvicorn entry (exports `app`)
-├── cli.py                # CLI red-team runner
-├── nixpacks.toml         # Railway Nixpacks build
-├── requirements.txt      # Unified deps (Playwright, Garak, FastAPI)
-├── run_redteam.py
-└── config.py
-```
-
-## Setup (local development)
-
-### Prerequisites
-
-- Python 3.11+
-- Virtual environment (recommended)
-
-### Installation
+Then point it at a real program:
 
 ```bash
-git clone https://github.com/valosd453-bit/AI-red-team.git
-cd AI-red-team
-python -m venv .venv
-source .venv/bin/activate   # or .venv\Scripts\activate on Windows
-pip install -r requirements.txt
-playwright install chromium
+python -m bountymode scope import examples/policy-example.md --program acme -o scope.json
+python -m bountymode check scope.json api.acme.com --technique prompt_injection
+python -m bountymode run examples/case-example.yaml -o bounty-run/acme-pass-1   # dry run
 ```
 
-### Run the orchestrator (API)
+Full documentation, the CLI reference, the Python API, the architecture diagram
+and the **real test results** live in
+[`bounty_mode/README.md`](bounty_mode/README.md).
 
-```bash
-uvicorn main:app --host 0.0.0.0 --port 7860
-# or
-python -m agathon.orchestrator
+---
+
+## What the workflow layer adds
+
+| Component | Problem it solves |
+|---|---|
+| **Scope importer** | Policies are prose; testing needs machine-readable rules |
+| **Authorization gate** | Deny-by-default: nothing runs without an in-scope target *and* a permitted technique |
+| **Stop-conditions** | Kill switch, request/time/error budgets that latch |
+| **Evidence vault** | Redacts secrets/PII before persist; hash-chains everything for integrity |
+| **Triage scorer** | Real CVSS v3.1 + bounty weighting (cross-tenant > one-off jailbreak) |
+| **Report generator** | HackerOne/Bugcrowd-shaped writeups + JSON submission payloads |
+| **Dedup + retest** | Never submit a duplicate; verify a fix after remediation |
+
+---
+
+## Safety model
+
+The layer enforces, by design:
+
+1. **Scope** — target must resolve to an in-scope asset and match no exclusion.
+2. **Technique policy** — disruptive classes (DoS / rate-limit exhaustion) are
+   blocked for every program, even when the target is in scope.
+3. **Minimal proof** — the vault redacts 14 credential classes and 5
+   personal-data classes; nothing sensitive is written to disk.
+4. **Human in the loop** — any side-effecting technique requires an audited
+   approval registered with the gate.
+5. **Dry run by default** — `run` contacts a target only with an explicit
+   `--live`.
+
+---
+
+## Testing
+
+```
+76 passed in 0.15s        # bounty_mode/tests, Python 3.11, offline
 ```
 
-### Run the CLI assessment
+What is verified (and what is not) is stated precisely in the
+[Testing section](bounty_mode/README.md#testing) — including the explicit
+limitation that **no live scan against a real target was executed** in the
+environment this was built in.
 
-```bash
-python cli.py --model openai/gpt-oss-20b -m <model> ...
-```
+---
 
-### Other runners
+## License
 
-```bash
-python run_redteam.py
-python comprehensive_test.py
-```
+`bounty_mode/` is MIT (see [`bounty_mode/LICENSE`](bounty_mode/LICENSE)).
+The engine under `agathon/`, `attacks/` and `api/` retains its own license;
+check it before redistribution.
