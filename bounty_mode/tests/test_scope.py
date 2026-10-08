@@ -143,7 +143,7 @@ def test_importer_normalises_camel_case_keys():
 
 
 def test_importer_merges_always_prohibited_classes():
-    scope = ScopeImporter().from_dict={"{"program": "acme"}
+    scope = ScopeImporter().from_dict({"program": "acme"})
     assert "economic_denial" in scope.prohibited_techniques
     assert "destructive" in scope.prohibited_techniques
     assert "malware" in scope.prohibited_techniques
