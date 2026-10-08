@@ -1,0 +1,33 @@
+# Bounty Mode case file — one target, one pass, explicit techniques.
+#
+# Run it as a dry run (default, no engine calls):
+#     python -m bountymode run examples/case-example.yaml
+#
+# Run it live against an engine:
+#     python -m bountymode run examples/case-example.yaml \
+#         --live --engine https://your-engine --token "$INTERNAL_SCAN_TOKEN"
+
+id: acme-assistant-pass-1
+scope: examples/scope-example.json
+target: api.acme.com
+output_dir: bounty-run/acme-pass-1
+
+techniques:
+  - prompt_injection
+  - indirect_injection
+  - system_prompt_leak
+  - data_exfiltration
+  - rag_poisoning
+  - cross_tenant
+  - output_handling
+  - tool_misuse            # side effects -> requires an approval below
+  - economic_denial        # destructive -> always blocked; listed to prove it
+
+# Human-in-the-loop approvals for side-effecting techniques.
+# Only add an entry here after a human has explicitly authorised the test.
+approvals:
+  - technique: tool_misuse
+    target: api.acme.com
+    approved_by: "analyst-name"
+    approved_at: "2026-10-08T09:00:00Z"
+    note: "Authorised to test the assistant's tool-calling surface with a test account."
